@@ -9,7 +9,7 @@ const BUCKET = 'photos';
 
 const MOOD_NAMES = ['', 'отлично', 'хорошо', 'нормально', 'плохо', 'ужасно'];
 const MOOD_VARS = ['', 'var(--m1)', 'var(--m2)', 'var(--m3)', 'var(--m4)', 'var(--m5)'];
-const THEMES = { ghosts: 'Призраки', twemoji: 'Эмодзи', cats: 'Котики' };
+const THEMES = { ghosts: 'Призраки', cats: 'Котики' };
 const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const MONTHS_N = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const DOWS = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
@@ -244,11 +244,15 @@ function renderAuth() {
   $('authOut').hidden = !!session; $('authIn').hidden = !session;
   if (session) $('whoami').textContent = 'Вошла как ' + session.user.email;
 }
-async function sendLink() {
-  const email = $('email').value.trim(); if (!email) return;
-  $('authStatus').textContent = 'Отправляю…';
-  const { error } = await supa.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-  $('authStatus').textContent = error ? 'Ошибка: ' + error.message : 'Ссылка отправлена на ' + email + '. Открой её на этом устройстве.';
+async function signIn(create) {
+  const email = $('email').value.trim(), password = $('password').value;
+  if (!email || password.length < 6) { $('authStatus').textContent = 'Нужны почта и пароль от 6 символов'; return; }
+  $('authStatus').textContent = create ? 'Создаю аккаунт…' : 'Вхожу…';
+  const { error } = create
+    ? await supa.auth.signUp({ email, password })
+    : await supa.auth.signInWithPassword({ email, password });
+  if (error) { $('authStatus').textContent = 'Не получилось: ' + error.message; return; }
+  $('authStatus').textContent = ''; $('password').value = '';
 }
 
 // ---------- wiring ----------
@@ -279,8 +283,9 @@ $('photoInput').addEventListener('change', (e) => { const f = e.target.files[0];
 $('openSettings').addEventListener('click', () => { renderThemes(); $('sheetBg').hidden = false; });
 $('closeSheet').addEventListener('click', () => { $('sheetBg').hidden = true; });
 $('sheetBg').addEventListener('click', (e) => { if (e.target === $('sheetBg')) $('sheetBg').hidden = true; });
-$('sendLink').addEventListener('click', sendLink);
-$('email').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendLink(); });
+$('signIn').addEventListener('click', () => signIn(false));
+$('signUp').addEventListener('click', () => signIn(true));
+$('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') signIn(false); });
 $('logout').addEventListener('click', async () => { await supa.auth.signOut(); });
 $('syncNow').addEventListener('click', pull);
 $('siriUrl').textContent = location.origin + location.pathname + '?mood=1';

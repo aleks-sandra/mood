@@ -217,8 +217,12 @@ nav .fl{fill:currentColor}
     <div class="themes" id="themes"></div>
     <h3>Аккаунт</h3>
     <div id="authOut">
-      <div class="field"><input type="email" id="email" placeholder="почта" autocomplete="email"><button class="btn" id="sendLink">Войти</button></div>
-      <p class="small">Пришлём ссылку для входа на почту. Пароль не нужен.</p>
+      <div class="field" style="flex-direction:column">
+        <input type="email" id="email" placeholder="почта" autocomplete="username">
+        <input type="password" id="password" placeholder="пароль" autocomplete="current-password">
+      </div>
+      <div class="field" style="margin-top:10px"><button class="btn" id="signIn" style="flex:1">Войти</button><button class="btn quiet" id="signUp">Создать аккаунт</button></div>
+      <p class="small">Один аккаунт — все устройства. Вход сохраняется.</p>
       <p class="status" id="authStatus"></p>
     </div>
     <div id="authIn" hidden>
@@ -229,7 +233,7 @@ nav .fl{fill:currentColor}
     <h3>Напоминание в 20:00</h3>
     <p class="small">На iPhone: Быстрые команды → Автоматизация → Время суток 20:00 → «Открыть приложение» → Настроение. Siri: создай команду «Настроение» с действием «Открыть URL» <code id="siriUrl"></code>, и говори «Привет, Siri, настроение отлично».</p>
     <h3>О приложении</h3>
-    <p class="small">Иконки: Twemoji © Twitter (CC BY 4.0), Blobmoji © Google (Apache 2.0). Призраки нарисованы для этого приложения.</p>
+    <p class="small">Котики: Blobmoji © Google (Apache 2.0). Призраки нарисованы для этого приложения.</p>
     <div class="field" style="margin-top:18px"><button class="btn" id="closeSheet" style="flex:1">Готово</button></div>
   </div>
 </div>
