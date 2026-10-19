@@ -1,4 +1,4 @@
-const CACHE = 'mood-v3';
+const CACHE = 'mood-v4';
 const ASSETS = ['./', './index.html', './app.js', './icons.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-180.png'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => fetch(a, { cache: 'no-cache' }).then(r => r.ok && c.put(a, r)).catch(() => {})))).then(() => self.skipWaiting()));

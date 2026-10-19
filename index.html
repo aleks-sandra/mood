@@ -148,6 +148,12 @@ nav .fl{fill:currentColor}
 .small code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--chip);padding:1px 5px;border-radius:5px}
 .status{font-size:12px;color:var(--muted);margin-top:6px}
 .err{color:var(--accent)}
+
+.face-btn.sm{width:58px}.face-btn.sm .face{width:46px;height:46px}.face-btn.sm.on{width:66px}.face-btn.sm.on .face{width:52px;height:52px}
+.note-ta{width:100%;min-height:80px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);padding:12px;font:inherit;font-weight:600;resize:vertical}
+.zoomable{cursor:zoom-in}
+.lightbox{position:fixed;inset:0;background:rgba(10,6,14,.92);display:flex;align-items:center;justify-content:center;z-index:30;cursor:zoom-out;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.lightbox img{max-width:100%;max-height:100%;object-fit:contain}
 </style>
 </head>
 <body>
@@ -237,6 +243,21 @@ nav .fl{fill:currentColor}
     <div class="field" style="margin-top:18px"><button class="btn" id="closeSheet" style="flex:1">Готово</button></div>
   </div>
 </div>
+
+
+<div class="sheet-bg" id="daySheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="dayTitle">
+    <h2 id="dayTitle"></h2>
+    <div class="faces" id="dayFaces" style="margin-top:4px"></div>
+    <h3>Заметка</h3>
+    <textarea id="dayNote" class="note-ta" placeholder="Пара слов о дне…"></textarea>
+    <h3>Фото</h3>
+    <div class="photo-box" id="dayPhoto" hidden style="margin:0 0 10px"></div>
+    <button class="chip" id="dayPhotoBtn"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/></svg><span>Добавить фото</span></button>
+    <div class="field" style="margin-top:18px"><button class="btn" id="dayClose" style="flex:1">Готово</button></div>
+  </div>
+</div>
+<div class="lightbox" id="lightbox" hidden><img alt="Фото"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="icons.js"></script>

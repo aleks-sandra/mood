@@ -74,7 +74,8 @@ function renderToday() {
   if (e.photo_url) {
     $('photoChip').classList.add('has'); $('photoChip').querySelector('span').textContent = 'Фото ✓';
     pb.hidden = false;
-    pb.innerHTML = `<span class="photo-wrap"><img src="${e.photo_url}" alt="Фото дня"><button class="remove" aria-label="Убрать фото">×</button></span>`;
+    pb.innerHTML = `<span class="photo-wrap"><img alt="Фото дня" class="zoomable"><button class="remove" aria-label="Убрать фото">×</button></span>`;
+    setPhoto(pb.querySelector('img'), e.photo_url);
     pb.querySelector('.remove').addEventListener('click', () => save(sel, { photo_url: null }));
   } else {
     $('photoChip').classList.remove('has'); $('photoChip').querySelector('span').textContent = 'Фото';
@@ -114,7 +115,7 @@ function renderMonth() {
     if (e.mood) b.innerHTML = `<span class="face">${faceHtml(e.mood)}</span>`;
     const extra = (e.note ? 1 : 0) + (e.photo_url ? 1 : 0);
     if (extra) b.insertAdjacentHTML('beforeend', `<span class="badge">${extra}</span>`);
-    if (future) b.disabled = true; else b.addEventListener('click', () => { sel = key; showTab('today'); });
+    if (future) b.disabled = true; else b.addEventListener('click', () => openDay(key));
     c.appendChild(b);
     const n = document.createElement('span'); n.className = 'd'; n.textContent = d; c.appendChild(n);
     g.appendChild(c);
@@ -226,10 +227,70 @@ async function uploadPhoto(file) {
   const path = `${session.user.id}/${sel}.${ext}`;
   const { error } = await supa.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
   if (error) { toast('Не удалось: ' + error.message, 3000); return; }
-  const { data } = supa.storage.from(BUCKET).getPublicUrl(path);
-  save(sel, { photo_url: data.publicUrl + '?v=' + Date.now(), mood: entries[sel]?.mood || 3 });
-  toast('Фото добавлено');
+  photoCache.delete(path);
+  save(sel, { photo_url: path, mood: entries[sel]?.mood || 3 });
+  toast('Фото добавлено'); if (dayOpen) renderDay();
 }
+
+
+// ---------- photos: private bucket, signed links ----------
+const photoCache = new Map();
+async function photoSrc(ref) {
+  if (!ref) return '';
+  if (/^https?:/.test(ref)) return ref;                       // legacy public url
+  const c = photoCache.get(ref); if (c && c.exp > Date.now()) return c.url;
+  if (!supa || !session) return '';
+  const { data, error } = await supa.storage.from(BUCKET).createSignedUrl(ref, 3600);
+  if (error || !data) return '';
+  photoCache.set(ref, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
+  return data.signedUrl;
+}
+function setPhoto(img, ref) {
+  img.dataset.ref = ref;
+  photoSrc(ref).then(u => { if (img.dataset.ref === ref && u) img.src = u; });
+  img.addEventListener('click', () => { if (img.src) openLightbox(img.src); });
+}
+function openLightbox(src) {
+  const lb = $('lightbox'); lb.querySelector('img').src = src; lb.hidden = false;
+}
+$('lightbox').addEventListener('click', () => { $('lightbox').hidden = true; });
+
+// ---------- day sheet (from month view) ----------
+let dayOpen = null;
+function openDay(key) {
+  dayOpen = key; renderDay(); $('daySheet').hidden = false;
+}
+function renderDay() {
+  if (!dayOpen) return;
+  const d = fromIso(dayOpen), e = entries[dayOpen] || {};
+  $('dayTitle').textContent = `${DOWS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+  const f = $('dayFaces'); f.innerHTML = '';
+  for (let m = 1; m <= 5; m++) {
+    const b = document.createElement('button');
+    b.className = 'face-btn sm' + (e.mood === m ? ' on' : '');
+    b.setAttribute('aria-label', MOOD_NAMES[m]);
+    b.innerHTML = `<span class="face">${faceHtml(m)}</span><span>${MOOD_NAMES[m]}</span>`;
+    b.addEventListener('click', () => { save(dayOpen, { mood: m }); renderDay(); });
+    f.appendChild(b);
+  }
+  const ta = $('dayNote'); if (document.activeElement !== ta) ta.value = e.note || '';
+  const pb = $('dayPhoto');
+  if (e.photo_url) {
+    pb.hidden = false;
+    pb.innerHTML = `<span class="photo-wrap"><img alt="Фото дня" class="zoomable"><button class="remove" aria-label="Убрать фото">×</button></span>`;
+    setPhoto(pb.querySelector('img'), e.photo_url);
+    pb.querySelector('.remove').addEventListener('click', () => { save(dayOpen, { photo_url: null }); renderDay(); });
+  } else { pb.hidden = true; pb.innerHTML = ''; }
+}
+let dayNoteTimer;
+$('dayNote').addEventListener('input', () => {
+  clearTimeout(dayNoteTimer);
+  dayNoteTimer = setTimeout(() => { const v = $('dayNote').value.trim(); if (dayOpen && (entries[dayOpen]?.note || '') !== v) save(dayOpen, { note: v || null, mood: entries[dayOpen]?.mood || 3 }); }, 700);
+});
+$('dayNote').addEventListener('blur', () => { clearTimeout(dayNoteTimer); const v = $('dayNote').value.trim(); if (dayOpen && (entries[dayOpen]?.note || '') !== v) save(dayOpen, { note: v || null, mood: entries[dayOpen]?.mood || 3 }); });
+$('dayPhotoBtn').addEventListener('click', () => { sel = dayOpen; $('photoInput').click(); });
+$('dayClose').addEventListener('click', () => { $('daySheet').hidden = true; dayOpen = null; renderMonth(); });
+$('daySheet').addEventListener('click', (e) => { if (e.target === $('daySheet')) { $('daySheet').hidden = true; dayOpen = null; renderMonth(); } });
 
 // ---------- auth ----------
 async function initSupabase() {
