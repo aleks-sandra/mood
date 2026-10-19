@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Настроение</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Настроение">
+<meta name="theme-color" content="#FBF6EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1F1B26" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: one fixed-height screen, three tabs, bottom nav. Cream paper, pastel mood scale. */
+:root{
+  --bg:#FBF6EF; --card:#FFFFFF; --fg:#3B3443; --muted:#9A8FA6; --faint:#C4BBCC;
+  --line:#F0E8DF; --chip:#F1EAE1; --dash:#D9CFE6; --empty:#F3EDE5; --accent:#E07A5F;
+  --ok-bg:#E9F6EC; --ok-fg:#2F7A48;
+  --m1:#FFD66B; --m2:#B7E4C0; --m3:#BCD8F5; --m4:#D6C6F2; --m5:#D5D2DC;
+  --shadow:0 10px 28px rgba(103,90,140,.18);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1F1B26; --card:#2A2533; --fg:#F1ECF5; --muted:#A99FB5; --faint:#6E6479;
+  --line:#352F3F; --chip:#2F2938; --dash:#4A4256; --empty:#272230; --accent:#F0957B;
+  --ok-bg:#243B2C; --ok-fg:#9FDDB0; --shadow:0 10px 28px rgba(0,0,0,.35); color-scheme:dark; }}
+:root[data-theme="dark"]{
+  --bg:#1F1B26; --card:#2A2533; --fg:#F1ECF5; --muted:#A99FB5; --faint:#6E6479;
+  --line:#352F3F; --chip:#2F2938; --dash:#4A4256; --empty:#272230; --accent:#F0957B;
+  --ok-bg:#243B2C; --ok-fg:#9FDDB0; --shadow:0 10px 28px rgba(0,0,0,.35); color-scheme:dark; }
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:'Nunito',system-ui,-apple-system,sans-serif;font-weight:700;
+  -webkit-font-smoothing:antialiased;overflow:hidden;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.app{height:100%;display:flex;flex-direction:column}
+.screen{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:12px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}
+.icon-btn{width:44px;height:44px;border-radius:22px;background:var(--chip);display:flex;align-items:center;justify-content:center;flex:none}
+.icon-btn svg{width:18px;height:18px;stroke:var(--fg);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn[disabled]{opacity:.4;cursor:default}
+.title-btn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:4px 10px;min-width:0;position:relative}
+.title-btn .eyebrow{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.title-btn .big{font-size:20px;font-weight:800;display:flex;align-items:center;gap:6px}
+.title-btn .big svg{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.title-btn input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+h1{margin:0;font-size:28px;font-weight:800;line-height:1.15;text-wrap:balance;text-align:center}
+.sub{margin:8px 0 0;text-align:center;color:var(--muted);font-size:14px}
+
+/* Today */
+#today .ask{margin-top:clamp(28px,9vh,80px)}
+.faces{display:flex;justify-content:center;align-items:flex-end;gap:6px;margin-top:clamp(24px,6vh,52px)}
+.face-btn{display:flex;flex-direction:column;align-items:center;gap:8px;width:66px;padding:8px 0 6px;border-radius:22px;transition:transform .18s,box-shadow .18s,background .18s}
+.face-btn .face{width:56px;height:56px}
+.face-btn .face svg{width:100%;height:100%;display:block}
+.face-btn span{font-size:11px;color:var(--muted)}
+.face-btn.on{background:var(--card);box-shadow:var(--shadow);transform:translateY(-10px);width:76px}
+.face-btn.on .face{width:64px;height:64px}
+.face-btn.on span{color:var(--fg);font-weight:800}
+@media (prefers-reduced-motion:reduce){.face-btn{transition:none}}
+.toast{margin:28px auto 0;display:flex;align-items:center;gap:8px;background:var(--ok-bg);color:var(--ok-fg);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;opacity:0;transition:opacity .25s}
+.toast.show{opacity:1}
+.toast svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.extras{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:14px;border:1.5px dashed var(--dash);color:var(--muted);font-size:14px}
+.chip svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.chip.has{border-style:solid;border-color:var(--line);background:var(--card);color:var(--fg)}
+.note-box{margin-top:14px}
+.note-box textarea{width:100%;min-height:88px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);padding:12px;font:inherit;font-weight:600;resize:vertical}
+.photo-box{margin-top:14px;display:flex;justify-content:center}
+.photo-box img{max-width:100%;max-height:220px;border-radius:16px;box-shadow:var(--shadow)}
+.photo-box .remove{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:16px;background:rgba(0,0,0,.55);color:#fff;font-size:18px;line-height:1}
+.photo-wrap{position:relative;display:inline-block}
+.foot{margin-top:auto;padding-top:16px;text-align:center;color:var(--faint);font-size:13px}
+
+/* Month */
+.counts{display:flex;justify-content:center;gap:14px;margin-top:14px;font-size:12px;color:var(--muted)}
+.counts span{display:flex;align-items:center;gap:5px}
+.counts i{width:10px;height:10px;border-radius:5px;display:inline-block}
+.wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-top:18px}
+.wk div{text-align:center;font-size:12px;font-weight:800;color:var(--faint)}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:12px;column-gap:6px;margin-top:8px}
+.cell{display:flex;flex-direction:column;align-items:center;gap:4px;min-height:64px}
+.cell .d{font-size:12px;color:var(--muted)}
+.cell.today .d{color:var(--accent);font-weight:800}
+.day-btn{position:relative;width:46px;height:46px;border-radius:23px;display:block}
+.day-btn .face{width:46px;height:46px;display:block}
+.day-btn .face svg{width:100%;height:100%;display:block}
+.day-btn.empty{background:var(--empty);border:1.5px dashed var(--dash)}
+.day-btn.future{background:transparent;border:1.5px dashed var(--line);cursor:default}
+.badge{position:absolute;top:-4px;right:-5px;min-width:17px;height:17px;border-radius:9px;background:var(--card);border:1.5px solid var(--line);color:var(--fg);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.hint{margin-top:auto;padding-top:12px;text-align:center;color:var(--faint);font-size:12px}
+
+/* Year */
+.ym{display:flex;align-items:center;gap:3px;margin-top:14px}
+.ym .rl{width:20px;flex:none}
+.ym div:not(.rl){flex:1;text-align:center;font-size:10px;font-weight:800;color:var(--faint)}
+.rows{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.row{display:flex;align-items:center;gap:3px;height:15px}
+.row .rl{width:20px;flex:none;font-size:9px;color:var(--faint);text-align:right;padding-right:2px;font-variant-numeric:tabular-nums}
+.row b{flex:1;display:flex;justify-content:center}
+.px{width:15px;height:15px;border-radius:8px;border:1px solid var(--line);background:transparent}
+.px.none{visibility:hidden}
+.px.m1{background:var(--m1);border-color:var(--m1)} .px.m2{background:var(--m2);border-color:var(--m2)}
+.px.m3{background:var(--m3);border-color:var(--m3)} .px.m4{background:var(--m4);border-color:var(--m4)} .px.m5{background:var(--m5);border-color:var(--m5)}
+.legend{display:flex;justify-content:center;gap:14px;margin-top:auto;padding-top:14px}
+.legend div{display:flex;flex-direction:column;align-items:center;gap:2px}
+.legend b{font-size:12px;color:var(--muted)}
+.legend .face{width:30px;height:30px}
+.legend .face svg{width:100%;height:100%;display:block}
+
+/* Nav */
+nav{flex:none;height:calc(72px + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-start;padding-top:10px;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+nav button{display:flex;flex-direction:column;align-items:center;gap:3px;width:80px;color:var(--faint);font-size:11px}
+nav button.on{color:var(--fg);font-weight:800}
+nav button svg{width:24px;height:24px}
+nav .nf svg{width:26px;height:26px}
+nav .st{stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+nav .fl{fill:currentColor}
+
+/* Settings sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(30,20,40,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:100%;max-width:520px;max-height:88%;overflow-y:auto;background:var(--bg);border-radius:24px 24px 0 0;padding:20px max(20px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-right,0px))}
+.sheet h2{margin:0 0 14px;font-size:20px;font-weight:800}
+.sheet h3{margin:20px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.theme-opt{border-radius:16px;background:var(--card);border:2px solid var(--line);padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.theme-opt.on{border-color:var(--accent);color:var(--fg)}
+.theme-opt .row3{display:flex;gap:2px}
+.theme-opt .face{width:22px;height:22px}
+.theme-opt .face svg{width:100%;height:100%;display:block}
+.field{display:flex;gap:8px}
+.field input{flex:1;min-width:0;height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--fg);padding:0 12px;font:inherit;font-weight:600}
+.btn{height:44px;padding:0 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-weight:800}
+.btn.quiet{background:var(--chip);color:var(--fg)}
+.small{font-size:13px;color:var(--muted);line-height:1.45;margin:6px 0 0}
+.small code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--chip);padding:1px 5px;border-radius:5px}
+.status{font-size:12px;color:var(--muted);margin-top:6px}
+.err{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <section class="screen" id="today">
+    <div class="topbar">
+      <button class="icon-btn" id="prevDay" aria-label="Предыдущий день"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="title-btn" aria-label="Выбрать дату">
+        <span class="eyebrow" id="dowLabel">понедельник</span>
+        <span class="big"><span id="dateLabel">19 октября</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+        <input type="date" id="datePick" aria-label="Дата">
+      </button>
+      <button class="icon-btn" id="nextDay" aria-label="Следующий день"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="ask">
+      <h1 id="askTitle">Как прошёл день?</h1>
+      <p class="sub">Нажми на настроение — запись сохранится сразу</p>
+    </div>
+    <div class="faces" id="faces"></div>
+    <div class="toast" id="toast" role="status"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg><span id="toastText">Сохранено</span></div>
+    <div class="extras">
+      <button class="chip" id="noteChip"><svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M12 8l4 4"/></svg><span>Заметка</span></button>
+      <button class="chip" id="photoChip"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="3"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l1.5-3h5L16 7"/></svg><span>Фото</span></button>
+      <input type="file" id="photoInput" accept="image/*" hidden>
+    </div>
+    <div class="note-box" id="noteBox" hidden><textarea id="noteText" placeholder="Пара слов о дне…"></textarea></div>
+    <div class="photo-box" id="photoBox" hidden></div>
+    <p class="foot" id="streak"></p>
+  </section>
+
+  <section class="screen" id="month" hidden>
+    <div class="topbar">
+      <button class="icon-btn" id="prevMonth" aria-label="Предыдущий месяц"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <h1 id="monthTitle" style="font-size:22px"></h1>
+      <button class="icon-btn" id="nextMonth" aria-label="Следующий месяц"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="counts" id="monthCounts"></div>
+    <div class="wk"><div>пн</div><div>вт</div><div>ср</div><div>чт</div><div>пт</div><div>сб</div><div>вс</div></div>
+    <div class="grid" id="monthGrid"></div>
+    <p class="hint">пунктир — день без записи, нажми, чтобы заполнить</p>
+  </section>
+
+  <section class="screen" id="year" hidden>
+    <div class="topbar">
+      <button class="icon-btn" id="prevYear" aria-label="Предыдущий год"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div style="text-align:center"><h1 id="yearTitle" style="font-size:22px"></h1><p class="sub" id="yearSub" style="margin-top:2px;font-size:12px"></p></div>
+      <button class="icon-btn" id="nextYear" aria-label="Следующий год"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="ym"><div class="rl"></div><div>я</div><div>ф</div><div>м</div><div>а</div><div>м</div><div>и</div><div>и</div><div>а</div><div>с</div><div>о</div><div>н</div><div>д</div></div>
+    <div class="rows" id="yearRows"></div>
+    <div class="legend" id="yearLegend"></div>
+  </section>
+
+  <nav aria-label="Разделы">
+    <button data-tab="today" class="nf on"><span class="face" id="navFace"></span><span>Сегодня</span></button>
+    <button data-tab="month"><svg viewBox="0 0 24 24" class="st"><rect x="3" y="5" width="18" height="16" rx="4"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Месяц</span></button>
+    <button data-tab="year"><svg viewBox="0 0 24 24" class="fl"><circle cx="6" cy="6" r="2.2"/><circle cx="12" cy="6" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="6" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="18" cy="12" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="12" cy="18" r="2.2"/><circle cx="18" cy="18" r="2.2"/></svg><span>Год</span></button>
+    <button id="openSettings" aria-label="Настройки"><svg viewBox="0 0 24 24" class="st"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Ещё</span></button>
+  </nav>
+</div>
+
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="sheetTitle">
+    <h2 id="sheetTitle">Настройки</h2>
+    <h3>Персонажи</h3>
+    <div class="themes" id="themes"></div>
+    <h3>Аккаунт</h3>
+    <div id="authOut">
+      <div class="field"><input type="email" id="email" placeholder="почта" autocomplete="email"><button class="btn" id="sendLink">Войти</button></div>
+      <p class="small">Пришлём ссылку для входа на почту. Пароль не нужен.</p>
+      <p class="status" id="authStatus"></p>
+    </div>
+    <div id="authIn" hidden>
+      <p class="small" id="whoami"></p>
+      <p class="status" id="syncStatus"></p>
+      <div class="field" style="margin-top:10px"><button class="btn quiet" id="syncNow">Синхронизировать</button><button class="btn quiet" id="logout">Выйти</button></div>
+    </div>
+    <h3>Напоминание в 20:00</h3>
+    <p class="small">На iPhone: Быстрые команды → Автоматизация → Время суток 20:00 → «Открыть приложение» → Настроение. Siri: создай команду «Настроение» с действием «Открыть URL» <code id="siriUrl"></code>, и говори «Привет, Siri, настроение отлично».</p>
+    <h3>О приложении</h3>
+    <p class="small">Иконки: Twemoji © Twitter (CC BY 4.0), Blobmoji © Google (Apache 2.0). Призраки нарисованы для этого приложения.</p>
+    <div class="field" style="margin-top:18px"><button class="btn" id="closeSheet" style="flex:1">Готово</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="icons.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
